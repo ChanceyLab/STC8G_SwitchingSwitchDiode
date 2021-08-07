@@ -1,0 +1,167 @@
+C51 COMPILER V9.01   STC8X_GPIO                                                            08/04/2021 11:57:18 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE STC8X_GPIO
+OBJECT MODULE PLACED IN .\build\STC8x_GPIO.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\..\libraries\peripherals\STC8x\src\STC8x_GPIO.c LARGE OMF2 OPTIMIZE(9
+                    -,SPEED) BROWSE INCDIR(..\..\libraries;..\..\libraries\core;..\..\libraries\core\register\STC8x;..\..\libraries\core\star
+                    -tup\STC8x;..\..\libraries\drives;..\..\libraries\drives\KeyScan;..\..\libraries\peripherals;..\..\libraries\peripherals\
+                    -STC8x\inc;..\..\libraries\peripherals\STC8x\src;..\..\libraries\components;..\..\libraries\components\TMT;..\..\librarie
+                    -s\components\PrintfRed;..\..\libraries\components\PreDelay;.\main;.\application) DEBUG PRINT(.\build\STC8x_GPIO.lst) OBJ
+                    -ECT(.\build\STC8x_GPIO.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------
+   2          |                            FILE DESCRIPTION                           |
+   3          -----------------------------------------------------------------------*/
+   4          /*----------------------------------------------------------------------
+   5            - File name     : STC8x_GPIO.c
+   6            - Author        : zeweni
+   7            - Update date   : 2020.04.24
+   8            -     Copyright(C)  : 2020-2021 zeweni. All rights reserved.
+   9          -----------------------------------------------------------------------*/
+  10          /*------------------------------------------------------------------------
+  11          |                            COPYRIGHT NOTICE                            |
+  12          ------------------------------------------------------------------------*/
+  13          /*
+  14           * Copyright (C) 2021, zeweni (17870070675@163.com)
+  15          
+  16           * This file is part of 8051 ELL low-layer libraries.
+  17          
+  18           * 8051 ELL low-layer libraries is free software: you can redistribute 
+  19           * it and/or modify it under the terms of the Apache-2.0 License.
+  20          
+  21           * 8051 ELL low-layer libraries is distributed in the hope that it will 
+  22           * be useful,but WITHOUT ANY WARRANTY; without even the implied warranty 
+  23           * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+  24           * Apache-2.0 License for more details.
+  25          
+  26           * You should have received a copy of the Apache-2.0 License.8051 ELL 
+  27           * low-layer libraries. If not, see <http://www.apache.org/licenses/>.
+  28          **/
+  29          /*-----------------------------------------------------------------------
+  30          |                               INCLUDES                                |
+  31          -----------------------------------------------------------------------*/
+  32          #include "STC8x_GPIO.h"
+  33          
+  34          /*-----------------------------------------------------------------------
+  35          |                                 DATA                                  |
+  36          -----------------------------------------------------------------------*/
+  37          /* None */
+  38          /*-----------------------------------------------------------------------
+  39          |                               FUNCTION                                |
+  40          -----------------------------------------------------------------------*/
+  41          #if (PER_LIB_GPIO_CTRL == 1)
+  42          
+  43                  #if (PER_LIB_GPIO_NVIC_CTRL == 1)
+  44          
+  45                          /**
+  46                           * @brief     外部中断0中断初始化函数。
+  47                           * @details   EXTI0 NVIC function.
+  48                           * @param[in] triMode  触发模式。Trigger mode. 
+  49                           * @param[in] pri 中断优先级。interrupt priority.
+  50                           * @param[in] run 使能控制位。enable control. 
+C51 COMPILER V9.01   STC8X_GPIO                                                            08/04/2021 11:57:18 PAGE 2   
+
+  51                           * @return    FSC_SUCCESS 返回成功。Return to success.
+  52                           * @return    FSC_FAIL    返回失败。Return to fail.
+  53                          **/
+  54                          FSCSTATE NVIC_EXTI0_Init(EXTITri_Type triMode,NVICPri_Type pri,BOOL run)
+  55                          {
+  56   1                              IT0 = triMode;
+  57   1                              EX0 = run;
+  58   1                              NVIC_EXTI0_PRI(pri);
+  59   1                              return FSC_SUCCESS;
+  60   1                      }
+  61          
+  62          
+  63                          /**
+  64                           * @brief      外部中断1中断初始化函数。
+  65                           * @details    EXTI1 NVIC function.
+  66                           * @param[in]  triMode  触发模式。Trigger mode. 
+  67                           * @param[in]  pri 中断优先级。interrupt priority.
+  68                           * @param[in]  run 使能控制位。enable control. 
+  69                           * @return     FSC_SUCCESS 返回成功。Return to success.
+  70                           * @return     FSC_FAIL    返回失败。Return to fail.
+  71                          **/
+  72                          FSCSTATE NVIC_EXTI1_Init(EXTITri_Type triMode,NVICPri_Type pri,BOOL run)
+  73                          {
+  74   1                              IT1 = triMode;
+  75   1                              EX1 = run;
+  76   1                              NVIC_EXTI1_PRI(pri);
+  77   1                              return FSC_SUCCESS;
+  78   1                      }
+  79          
+  80                          /**
+  81                           * @brief      外部中断2中断初始化函数,固定下降沿触发。
+  82                           * @details    EXTI2 NVIC function.
+  83                           * @param[in]  run 使能控制位。enable control. 
+  84                           * @return     FSC_SUCCESS 返回成功。Return to success.
+  85                           * @return     FSC_FAIL    返回失败。Return to fail.
+  86                          **/
+  87                          FSCSTATE NVIC_EXTI2_Init(BOOL run)
+  88                          {
+  89   1                              INTCLKO = (INTCLKO & 0xEF) | (run << 4);
+  90   1                              return FSC_SUCCESS;
+  91   1                      }
+  92          
+  93          
+  94                          /**
+  95                           * @brief      外部中断3中断初始化函数，固定下降沿触发。
+  96                           * @details    EXTI3 NVIC function.
+  97                           * @param[in]  run 使能控制位。enable control. 
+  98                           * @return     FSC_SUCCESS 返回成功。Return to success.
+  99                           * @return     FSC_FAIL    返回失败。Return to fail.
+ 100                          **/
+ 101                          FSCSTATE NVIC_EXTI3_Init(BOOL run)
+ 102                          {
+ 103   1                              INTCLKO = (INTCLKO & 0xDF) | (run << 5);
+ 104   1                              return FSC_SUCCESS;
+ 105   1                      }
+ 106          
+ 107          
+ 108                          /**
+ 109                           * @brief      外部中断4中断初始化函数，固定下降沿触发。
+ 110                           * @details    EXTI4 NVIC function.
+ 111                           * @param[in]  pri 中断优先级。interrupt priority.
+ 112                           * @param[in]  run 使能控制位。enable control. 
+C51 COMPILER V9.01   STC8X_GPIO                                                            08/04/2021 11:57:18 PAGE 3   
+
+ 113                           * @return     FSC_SUCCESS 返回成功。Return to success.
+ 114                           * @return     FSC_FAIL    返回失败。Return to fail.
+ 115                          **/
+ 116                          FSCSTATE NVIC_EXTI4_Init(NVICPri_Type pri,BOOL run)
+ 117                          {
+ 118   1                              NVIC_EXTI4_PRI(pri);
+ 119   1                              INTCLKO = (INTCLKO & 0xBF) | (run << 6);
+ 120   1                              return FSC_SUCCESS;
+ 121   1                      }
+ 122                          
+ 123                  #endif
+ 124                          
+ 125          #endif
+ 126          /*-----------------------------------------------------------------------
+ 127          |                   END OF FLIE.  (C) COPYRIGHT zeweni                  | 
+ 128          -----------------------------------------------------------------------*/
+ 129          
+ 130          
+ 131          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    158    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

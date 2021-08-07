@@ -1,0 +1,126 @@
+C51 COMPILER V9.01   PRINTFRED                                                             08/04/2021 11:57:19 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE PRINTFRED
+OBJECT MODULE PLACED IN .\build\PrintfRed.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\..\libraries\components\PrintfRed\PrintfRed.c LARGE OMF2 OPTIMIZE(9,S
+                    -PEED) BROWSE INCDIR(..\..\libraries;..\..\libraries\core;..\..\libraries\core\register\STC8x;..\..\libraries\core\startu
+                    -p\STC8x;..\..\libraries\drives;..\..\libraries\drives\KeyScan;..\..\libraries\peripherals;..\..\libraries\peripherals\ST
+                    -C8x\inc;..\..\libraries\peripherals\STC8x\src;..\..\libraries\components;..\..\libraries\components\TMT;..\..\libraries\
+                    -components\PrintfRed;..\..\libraries\components\PreDelay;.\main;.\application) DEBUG PRINT(.\build\PrintfRed.lst) OBJECT
+                    -(.\build\PrintfRed.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------
+   2          |                            FILE DESCRIPTION                           |
+   3          -----------------------------------------------------------------------*/
+   4          /*----------------------------------------------------------------------
+   5            - File name     : Printfred.c
+   6            - Author        : zeweni
+   7            - Update date   : 2020.01.11                  
+   8            -     Copyright(c)  : 2020-2021 zeweni. All rights reserved.
+   9          -----------------------------------------------------------------------*/
+  10          /*------------------------------------------------------------------------
+  11          |                            COPYRIGHT NOTICE                            |
+  12          ------------------------------------------------------------------------*/
+  13          /*
+  14           * Copyright (C) 2021, zeweni (17870070675@163.com)
+  15          
+  16           * This file is part of 8051 ELL low-layer libraries.
+  17          
+  18           * 8051 ELL low-layer libraries is free software: you can redistribute 
+  19           * it and/or modify it under the terms of the Apache-2.0 License.
+  20          
+  21           * 8051 ELL low-layer libraries is distributed in the hope that it will 
+  22           * be useful,but WITHOUT ANY WARRANTY; without even the implied warranty 
+  23           * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+  24           * Apache-2.0 License for more details.
+  25          
+  26           * You should have received a copy of the Apache-2.0 License.8051 ELL 
+  27           * low-layer libraries. If not, see <http://www.apache.org/licenses/>.
+  28          **/
+  29          /*-----------------------------------------------------------------------
+  30          |                               INCLUDES                                |
+  31          -----------------------------------------------------------------------*/
+  32          #include "Printfred.h"
+  33          /*-----------------------------------------------------------------------
+  34          |                                 DATA                                  |
+  35          -----------------------------------------------------------------------*/
+  36          
+  37          #ifndef COM_LIB_PRINTFRED_CTRL
+                  #define COM_LIB_PRINTFRED_CTRL (0)
+              #endif
+  40          
+  41          #ifndef COM_LIB_PRINTFRED_ROAD
+                  #define COM_LIB_PRINTFRED_ROAD (0)
+              #endif
+  44          
+  45          /*-----------------------------------------------------------------------
+  46          |                               FUNCTION                                |
+  47          -----------------------------------------------------------------------*/
+  48          
+  49          /**
+  50            * @name    putchar
+C51 COMPILER V9.01   PRINTFRED                                                             08/04/2021 11:57:19 PAGE 2   
+
+  51            * @brief   Redefining printf function     
+  52            * @param   c  put data
+  53            * @return  char
+  54          ***/
+  55          #if (COM_LIB_PRINTFRED_CTRL == 1)     
+  56          
+  57                  char putchar(char c)
+  58                  {
+  59   1                      #if   (COM_LIB_PRINTFRED_ROAD == 1)
+  60   1                      {
+  61   2                              
+  62   2                        UART1_Isr_Send_Byte((uint8_t)c);
+  63   2                              
+  64   2                      }
+  65   1                      #elif (COM_LIB_PRINTFRED_ROAD == 2)
+                              {
+                                      
+                                UART2_Isr_Send_Byte((uint8_t)c);      
+                                      
+                              }
+                              #elif (COM_LIB_PRINTFRED_ROAD == 3)
+                              {
+                                      
+                                UART3_Isr_Send_Byte((uint8_t)c);
+                                      
+                              }
+                              #elif (COM_LIB_PRINTFRED_ROAD == 4)
+                              {
+                                      
+                                UART4_Isr_Send_Byte((uint8_t)c);
+                                      
+                              }
+                              #endif
+  84   1                      
+  85   1                      return c;
+  86   1              }
+  87                  
+  88          #endif
+  89          
+  90          /*-----------------------------------------------------------------------
+  91          |                   END OF FLIE.  (C) COPYRIGHT zeweni                  |
+  92          -----------------------------------------------------------------------*/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     14    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

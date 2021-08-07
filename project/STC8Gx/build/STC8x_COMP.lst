@@ -1,0 +1,202 @@
+C51 COMPILER V9.01   STC8X_COMP                                                            08/04/2021 11:57:18 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE STC8X_COMP
+OBJECT MODULE PLACED IN .\build\STC8x_COMP.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\..\libraries\peripherals\STC8x\src\STC8x_COMP.c LARGE OMF2 OPTIMIZE(9
+                    -,SPEED) BROWSE INCDIR(..\..\libraries;..\..\libraries\core;..\..\libraries\core\register\STC8x;..\..\libraries\core\star
+                    -tup\STC8x;..\..\libraries\drives;..\..\libraries\drives\KeyScan;..\..\libraries\peripherals;..\..\libraries\peripherals\
+                    -STC8x\inc;..\..\libraries\peripherals\STC8x\src;..\..\libraries\components;..\..\libraries\components\TMT;..\..\librarie
+                    -s\components\PrintfRed;..\..\libraries\components\PreDelay;.\main;.\application) DEBUG PRINT(.\build\STC8x_COMP.lst) OBJ
+                    -ECT(.\build\STC8x_COMP.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------
+   2          |                            FILE DESCRIPTION                           |
+   3          -----------------------------------------------------------------------*/
+   4          /*----------------------------------------------------------------------
+   5            - File name     : STC8x_COMP.c
+   6            - Author        : zeweni
+   7            - Update date   : 2020.04.23                 
+   8            -     Copyright(C)  : 2020-2021 zeweni. All rights reserved.
+   9          -----------------------------------------------------------------------*/
+  10          /*------------------------------------------------------------------------
+  11          |                            COPYRIGHT NOTICE                            |
+  12          ------------------------------------------------------------------------*/
+  13          /*
+  14           * Copyright (C) 2021, zeweni (17870070675@163.com)
+  15          
+  16           * This file is part of 8051 ELL low-layer libraries.
+  17          
+  18           * 8051 ELL low-layer libraries is free software: you can redistribute 
+  19           * it and/or modify it under the terms of the Apache-2.0 License.
+  20          
+  21           * 8051 ELL low-layer libraries is distributed in the hope that it will 
+  22           * be useful,but WITHOUT ANY WARRANTY; without even the implied warranty 
+  23           * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+  24           * Apache-2.0 License for more details.
+  25          
+  26           * You should have received a copy of the Apache-2.0 License.8051 ELL 
+  27           * low-layer libraries. If not, see <http://www.apache.org/licenses/>.
+  28          **/
+  29          /*-----------------------------------------------------------------------
+  30          |                               INCLUDES                                |
+  31          -----------------------------------------------------------------------*/
+  32          #include "STC8x_COMP.h"
+  33          /*-----------------------------------------------------------------------
+  34          |                             DECLARATION                               |
+  35          -----------------------------------------------------------------------*/
+  36          
+  37          /**
+  38           * @brief     COMP选择触发模式宏函数，仅限本文件调用。
+  39           * @details   Comp select trigger state macro function, 
+  40           *            only this file call.
+  41           * @param[in] triMode 触发模式。 Mode of trigeer.
+  42          **/
+  43          #define COMP_TRISTATE_SELECT(triMode)    \
+  44          do{                                      \
+  45                  CMPCR1 = (CMPCR1 & 0xCF)|(triMode);  \
+  46          }while(0)
+  47          
+  48          /**
+  49           * @brief     COMP选择正极输入脚宏函数，仅限本文件调用。
+  50           * @details   Comp select positive input pin macro function, 
+C51 COMPILER V9.01   STC8X_COMP                                                            08/04/2021 11:57:18 PAGE 2   
+
+  51           *            only this file call.
+  52           * @param[in] pePin 正极输入引脚。Positive input pin.
+  53          **/
+  54          #if (PER_LIB_MCU_MUODEL == STC8Ax || PER_LIB_MCU_MUODEL == STC8Gx || PER_LIB_MCU_MUODEL == STC8Hx)
+  55                  
+  56                  #define  COMP_PEINPUT_SELECT(pePin)                   \
+  57                  do{                                                   \
+  58                                  if(pePin == COMP_PE_P37) {CMPCR1 &= 0xF7;}    \
+  59                                  else {CMPCR1 |= 0x08;                         \
+  60                                  ADC_CONTR = (ADC_CONTR & 0xF0)|(pePin)|0x80;} \
+  61                  }while(0)
+  62                  
+  63          #elif (PER_LIB_MCU_MUODEL == STC8Cx || PER_LIB_MCU_MUODEL == STC8Fx)
+                              
+                      #define  COMP_PEINPUT_SELECT(pePin)  do{CMPCR1 &= pePin;}while(0)
+                              
+              #endif  
+  68          
+  69          /**
+  70           * @brief     COMP选择负极输入脚宏函数，仅限本文件调用。
+  71           * @details   Comp select negative input pin macro function, 
+  72           *            only this file call.
+  73           * @param[in] nePin 负极输入引脚。Negative input pin.
+  74          **/
+  75          #define  COMP_NEINPUT_SELECT(nePin)                   \
+  76          do{                                                   \
+  77                  CMPCR1 = (CMPCR1 & 0xFB) | ((nePin & 0xF0) >> 2); \
+  78          }while(0)
+  79          
+  80          /*-----------------------------------------------------------------------
+  81          |                                 DATA                                  |
+  82          -----------------------------------------------------------------------*/
+  83          /* None. */
+  84          /*-----------------------------------------------------------------------
+  85          |                               FUNCTION                                |
+  86          -----------------------------------------------------------------------*/
+  87          #if (PER_LIB_COMP_CTRL == 1)
+  88          
+  89              #if (PER_LIB_COMP_INIT_CTRL == 1)
+  90          
+  91                  /**
+  92                   * @brief     COMP初始化函数。
+  93                   * @details   COMP initialization function.
+  94                   * @param[in] compx  COMP结构体句柄，初始化时请定义该句柄，并用其地址来传�
+             -��。
+  95                   *                   COMP structure handle. When initializing, 
+  96                   *                   please define the handle and use its address 
+  97                   *                   to pass parameters.
+  98                   * @return    FSC_SUCCESS 返回成功。Return to success.
+  99                   * @return    FSC_FAIL    返回失败。Return to fail.
+ 100                  ***/
+ 101                  FSCSTATE COMP_Init(const COMP_InitType* compx)
+ 102                  {
+ 103   1                  if(compx -> DC_FTW > 0x3F) return FSC_FAIL;
+ 104   1                  COMP_PEINPUT_SELECT(compx -> PEPin);
+ 105   1                  COMP_NEINPUT_SELECT(compx -> NEPin);
+ 106   1                  CMPCR2 = (CMPCR2 & 0xBF) | (compx -> AC_FTW << 6);
+ 107   1                  CMPCR2 = (CMPCR2 & 0xC0) | (compx -> DC_FTW);
+ 108   1                  CMPCR2 = (CMPCR2 & 0x7F) | (compx -> DIRPut << 7);
+ 109   1                  CMPCR1 = (CMPCR1 & 0xFD) | (compx -> Output << 1);
+ 110   1                  CMPCR1 = (CMPCR1 & 0x7F) | (compx -> Run << 7);
+ 111   1                  return FSC_SUCCESS;
+C51 COMPILER V9.01   STC8X_COMP                                                            08/04/2021 11:57:18 PAGE 3   
+
+ 112   1              }
+ 113          
+ 114              #endif
+ 115          
+ 116          
+ 117              #if (PER_LIB_COMP_NVIC_CTRL == 1)
+ 118          
+ 119                  /**
+ 120                   * @brief       COMP中断初始化函数。
+ 121                   * @details     COMP interrupt initialization function.
+ 122                   * @param[in]   pri 中断优先级。Interrupt priority.
+ 123                   * @param[in]   triMode  触发模式。Trigger mode.
+ 124                   * @return      FSC_SUCCESS 返回成功。Return to success.
+ 125                   * @return      FSC_FAIL    返回失败。Return to fail.
+ 126                  **/
+ 127                  FSCSTATE NVIC_COMP_Init(NVICPri_Type pri,COMPTri_Type triMode)
+ 128                  {
+ 129   1                  COMP_TRISTATE_SELECT(triMode);
+ 130   1                  COMP_NVIC_PRI(pri);
+ 131   1                  return FSC_SUCCESS;
+ 132   1              }
+ 133          
+ 134              #endif
+ 135          
+ 136              #if (PER_LIB_COMP_WORK_CTRL == 1)
+ 137          
+ 138                  /**
+ 139                   * @brief   COMP切换复用IO函数。
+ 140                   * @details COMP switch out port control function.  
+ 141                   * @param   port [IN] 复用IO枚举体。IO switch enumerator.
+ 142                   * @return  FSC_SUCCESS 返回成功。Return to success.
+ 143                   * @return  FSC_FAIL    返回失败。Return to fail.
+ 144                  ***/
+ 145                  FSCSTATE GPIO_COMP_SWPort(GPIOSWPort_Type port)
+ 146                  {
+ 147   1                  if(port < SW_Port3)
+ 148   1                  {
+ 149   2                      P_SW2 = (P_SW2 & 0xF7) | (port << 3);
+ 150   2                      return FSC_SUCCESS;
+ 151   2                  }
+ 152   1                  else return FSC_FAIL;
+ 153   1              }
+ 154          
+ 155              #endif
+ 156          
+ 157          #endif
+ 158          /*-----------------------------------------------------------------------
+ 159          |                   END OF FLIE.  (C) COPYRIGHT zeweni                  | 
+ 160          -----------------------------------------------------------------------*/
+ 161          
+ 162          
+ 163          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    212    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+C51 COMPILER V9.01   STC8X_COMP                                                            08/04/2021 11:57:18 PAGE 4   
+
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

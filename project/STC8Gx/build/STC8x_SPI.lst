@@ -1,0 +1,173 @@
+C51 COMPILER V9.01   STC8X_SPI                                                             08/04/2021 11:57:18 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE STC8X_SPI
+OBJECT MODULE PLACED IN .\build\STC8x_SPI.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\..\libraries\peripherals\STC8x\src\STC8x_SPI.c LARGE OMF2 OPTIMIZE(9,
+                    -SPEED) BROWSE INCDIR(..\..\libraries;..\..\libraries\core;..\..\libraries\core\register\STC8x;..\..\libraries\core\start
+                    -up\STC8x;..\..\libraries\drives;..\..\libraries\drives\KeyScan;..\..\libraries\peripherals;..\..\libraries\peripherals\S
+                    -TC8x\inc;..\..\libraries\peripherals\STC8x\src;..\..\libraries\components;..\..\libraries\components\TMT;..\..\libraries
+                    -\components\PrintfRed;..\..\libraries\components\PreDelay;.\main;.\application) DEBUG PRINT(.\build\STC8x_SPI.lst) OBJEC
+                    -T(.\build\STC8x_SPI.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------
+   2          |                            FILE DESCRIPTION                           |
+   3          -----------------------------------------------------------------------*/
+   4          /*----------------------------------------------------------------------
+   5            - File name     : STC8x_SPI.c
+   6            - Author        : zeweni
+   7            - Update date   : 2020.02.06
+   8            -     Copyright(C)  : 2020-2021 zeweni. All rights reserved.
+   9          -----------------------------------------------------------------------*/
+  10          /*------------------------------------------------------------------------
+  11          |                            COPYRIGHT NOTICE                            |
+  12          ------------------------------------------------------------------------*/
+  13          /*
+  14           * Copyright (C) 2021, zeweni (17870070675@163.com)
+  15          
+  16           * This file is part of 8051 ELL low-layer libraries.
+  17          
+  18           * 8051 ELL low-layer libraries is free software: you can redistribute 
+  19           * it and/or modify it under the terms of the Apache-2.0 License.
+  20          
+  21           * 8051 ELL low-layer libraries is distributed in the hope that it will 
+  22           * be useful,but WITHOUT ANY WARRANTY; without even the implied warranty 
+  23           * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+  24           * Apache-2.0 License for more details.
+  25          
+  26           * You should have received a copy of the Apache-2.0 License.8051 ELL 
+  27           * low-layer libraries. If not, see <http://www.apache.org/licenses/>.
+  28          **/
+  29          /*-----------------------------------------------------------------------
+  30          |                               INCLUDES                                |
+  31          -----------------------------------------------------------------------*/
+  32          #include "STC8x_SPI.h"
+  33          
+  34          /*-----------------------------------------------------------------------
+  35          |                                 DATA                                  |
+  36          -----------------------------------------------------------------------*/
+  37          /* None */
+  38          /*-----------------------------------------------------------------------
+  39          |                               FUNCTION                                |
+  40          -----------------------------------------------------------------------*/
+  41          #if (PER_LIB_SPI_CTRL == 1)
+  42                  
+  43                  #if (PER_LIB_SPI_INIT_CTRL == 1)
+  44                  
+  45                          /**
+  46                           * @brief     SPI初始化函数。
+  47                           * @details   SPI initialization function. 
+  48                           * @param[in] spix  SPI初始化结构体句柄，你需要定义它，并其地址传参。  
+  49                           *            you need to definean associated initialization handle,
+  50                           *            And pass it by its address.  
+C51 COMPILER V9.01   STC8X_SPI                                                             08/04/2021 11:57:18 PAGE 2   
+
+  51                           * @return    FSC_SUCCESS 返回成功。Return to success.
+  52                           * @return    FSC_FAIL    返回失败。Return to fail.
+  53                          **/
+  54                          FSCSTATE SPI_Init(const SPIInit_Type* spix)
+  55                          {
+  56   1                              SPDAT = 0;
+  57   1                              SPSTAT = SPIF | WCOL;          
+  58   1                              SPCTL = (SPCTL & 0x6F) | (spix -> Type);
+  59   1                              SPCTL = (SPCTL & 0xFC) | (spix -> ClkSrc);
+  60   1                              SPCTL = (SPCTL & 0xF3) | (spix -> Mode << 2);
+  61   1                              SPCTL = (SPCTL & 0xDF) | (spix -> Tran << 5);
+  62   1                              SPCTL = (SPCTL & 0xBF) | (spix -> Run << 6);  
+  63   1                              return FSC_SUCCESS;
+  64   1                      }
+  65                          
+  66                  #endif
+  67                          
+  68                  #if (PER_LIB_SPI_WORK_CTRL == 1)
+  69                          
+  70                          /**
+  71                           * @brief     SPI发送数据（一个字节）函数。
+  72                           * @details   SPI send data function. 
+  73                           * @param[in] dat   要发送的数据。 data of SPI.
+  74                           * @return    FSC_SUCCESS 返回成功。Return to success.
+  75                           * @return    FSC_FAIL    返回失败。Return to fail.
+  76                          **/
+  77                          FSCSTATE SPI_Send_Data(uint8_t dat)
+  78                          {
+  79   1                              SPDAT = dat;                    //Data register assignment
+  80   1                              while (!(SPSTAT & 0x80));  //Query completion flag
+  81   1                              SPSTAT = 0xC0;         //Clear interrupt flag
+  82   1                              return FSC_SUCCESS;
+  83   1                      }
+  84          
+  85          
+  86                          /**
+  87                           * @brief     SPI接收数据（一个字节）函数。
+  88                           * @details   SPI receive data function. 
+  89                           * @param     None.
+  90                           * @return    [uint8_t] 接收的数据。 receive data. 
+  91                          **/
+  92                          uint8_t SPI_Receive_Data(void)
+  93                          {
+  94   1                              while (!(SPSTAT & 0x80));  //Query completion flag
+  95   1                              SPSTAT = 0xC0;         //Clear interrupt flag
+  96   1                              return SPDAT;  //Data register assignment
+  97   1                      }
+  98          
+  99          
+ 100                          /**
+ 101                           * @brief     SPI中断初始化函数。
+ 102                           * @details   SPI init NVIC function.  
+ 103                           * @param[in] pri 中断优先级。interrupt priority.
+ 104                           * @param[in] run 使能控制位。enable control. 
+ 105                           * @return    FSC_SUCCESS 返回成功。Return to success.
+ 106                           * @return    FSC_FAIL    返回失败。Return to fail.
+ 107                          **/
+ 108                          FSCSTATE NVIC_SPI_Init(NVICPri_Type pri,BOOL run)
+ 109                          {
+ 110   1                              NVIC_SPI_PRI(pri);
+ 111   1                              IE2 = (IE2 & 0xFD) | (run << 1);
+ 112   1                              return FSC_SUCCESS;
+C51 COMPILER V9.01   STC8X_SPI                                                             08/04/2021 11:57:18 PAGE 3   
+
+ 113   1                      }
+ 114          
+ 115          
+ 116                          /**
+ 117                           * @brief     SPI切换复用IO函数。
+ 118                           * @details   SPI switch out port control function.  
+ 119                           * @param[in] port 复用IO枚举体。IO switch enumerator.
+ 120                           * @return    FSC_SUCCESS 返回成功。Return to success.
+ 121                           * @return    FSC_FAIL    返回失败。Return to fail.
+ 122                          **/
+ 123                          FSCSTATE GPIO_SPI_SWPort(GPIOSWPort_Type port)
+ 124                          {
+ 125   1                              P_SW1 = (P_SW1 & 0xF3) | (port << 2);
+ 126   1                              return FSC_FAIL;
+ 127   1                      }
+ 128                          
+ 129                  #endif
+ 130                          
+ 131          #endif
+ 132          /*-----------------------------------------------------------------------
+ 133          |                   END OF FLIE.  (C) COPYRIGHT zeweni                  |
+ 134          -----------------------------------------------------------------------*/
+ 135          
+ 136          
+ 137          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    169    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

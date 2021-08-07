@@ -1,0 +1,213 @@
+C51 COMPILER V9.01   STC8X_ADC                                                             08/04/2021 11:57:17 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE STC8X_ADC
+OBJECT MODULE PLACED IN .\build\STC8x_ADC.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\..\libraries\peripherals\STC8x\src\STC8x_ADC.c LARGE OMF2 OPTIMIZE(9,
+                    -SPEED) BROWSE INCDIR(..\..\libraries;..\..\libraries\core;..\..\libraries\core\register\STC8x;..\..\libraries\core\start
+                    -up\STC8x;..\..\libraries\drives;..\..\libraries\drives\KeyScan;..\..\libraries\peripherals;..\..\libraries\peripherals\S
+                    -TC8x\inc;..\..\libraries\peripherals\STC8x\src;..\..\libraries\components;..\..\libraries\components\TMT;..\..\libraries
+                    -\components\PrintfRed;..\..\libraries\components\PreDelay;.\main;.\application) DEBUG PRINT(.\build\STC8x_ADC.lst) OBJEC
+                    -T(.\build\STC8x_ADC.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------
+   2          |                            FILE DESCRIPTION                           |
+   3          -----------------------------------------------------------------------*/
+   4          /*----------------------------------------------------------------------
+   5            - File name     : STC8x_ADC.c
+   6            - Author        : zeweni
+   7            - Update date   : 2020.04.23
+   8            -     Copyright(C)  : 2020-2021 zeweni. All rights reserved.
+   9          -----------------------------------------------------------------------*/
+  10          /*------------------------------------------------------------------------
+  11          |                            COPYRIGHT NOTICE                            |
+  12          ------------------------------------------------------------------------*/
+  13          /*
+  14           * Copyright (C) 2021, zeweni (17870070675@163.com)
+  15          
+  16           * This file is part of 8051 ELL low-layer libraries.
+  17          
+  18           * 8051 ELL low-layer libraries is free software: you can redistribute 
+  19           * it and/or modify it under the terms of the Apache-2.0 License.
+  20          
+  21           * 8051 ELL low-layer libraries is distributed in the hope that it will 
+  22           * be useful,but WITHOUT ANY WARRANTY; without even the implied warranty 
+  23           * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+  24           * Apache-2.0 License for more details.
+  25          
+  26           * You should have received a copy of the Apache-2.0 License.8051 ELL
+  27           * low-layer libraries. If not, see <http://www.apache.org/licenses/>.
+  28          **/
+  29          /*-----------------------------------------------------------------------
+  30          |                               INCLUDES                                |
+  31          -----------------------------------------------------------------------*/
+  32          #include "STC8x_ADC.h"
+  33          
+  34          /*-----------------------------------------------------------------------
+  35          |                                 DATA                                  |
+  36          -----------------------------------------------------------------------*/
+  37          /* None */
+  38          /*-----------------------------------------------------------------------
+  39          |                               FUNCTION                                |
+  40          -----------------------------------------------------------------------*/
+  41          
+  42          #if (PER_LIB_ADC_CTRL == 1)
+  43          
+  44                  #if (PER_LIB_MCU_MUODEL == STC8Ax || PER_LIB_MCU_MUODEL == STC8Gx || PER_LIB_MCU_MUODEL == STC8Hx)
+  45          
+  46                          /**
+  47                           * @brief       空延时函数，帮助稳定ADC外设切换工作状态。
+  48                           * @details Working wait nop function.
+  49                           * @param   None
+  50                           * @return  None
+C51 COMPILER V9.01   STC8X_ADC                                                             08/04/2021 11:57:17 PAGE 2   
+
+  51                          ***/
+  52                          static void nop(void)
+  53                          {
+  54   1                              uint8_t i = 255;
+  55   1                              while(i--);
+  56   1                      }
+  57                          
+  58                          #if (PER_LIB_ADC_INIT_CTRL == 1)
+  59                          
+  60                                  /**
+  61                                   * @brief               ADC外设初始化函数。
+  62                                   * @details         This is a ADC peripheral init function. 
+  63                                   * @param[in]   adcx  ADC结构体句柄，初始化时请定义该句柄，并用其地址来传参。
+  64                                   *                    ADC structure handle. When initializing, 
+  65                                   *                    please define the handle and use its address
+  66                                   *                    to pass parameters.
+  67                       * @return      FSC_SUCCESS 返回成功。Return to success.
+  68                       * @return      FSC_FAIL    返回失败。Return to fail.
+  69                                  **/
+  70                                  FSCSTATE ADC_Init(const ADC_InitType* adcx)
+  71                                  {
+  72   1                                      if(adcx -> Speed <= 0x0F) 
+  73   1                                      {
+  74   2                                              EAXFR_ENABLE();
+  75   2                                              ADCTIM = 0x3F;
+  76   2                                              EAXFR_DISABLE();
+  77   2                                              ADC_CONTR = (ADC_CONTR & 0x70)|(adcx -> Power << 7)|(adcx -> Channel);
+  78   2                                              nop();
+  79   2                                              ADCCFG = (ADCCFG & 0xF0) | (adcx -> Speed);     
+  80   2                                              ADCCFG = (ADCCFG & 0xDF) | (adcx -> Align << 5);        
+  81   2                                              ADC_CONTR = (ADC_CONTR & 0xBF) | (adcx -> Run << 6);
+  82   2                                              return FSC_SUCCESS;
+  83   2                                      }
+  84   1                                      else return FSC_FAIL;
+  85   1                              }
+  86                                  
+  87                          #endif
+  88                          
+  89                          #if (PER_LIB_ADC_WORK_CTRL == 1)
+  90                                  
+  91                                  /**
+  92                                   * @brief          ADC获取采集结果函数（查询法）。
+  93                                   * @details        This is a ADC get sample function. 
+  94                                   * @param[in]  channel  ADC采集通道,不同的芯片型号，通道有所不同，请查看头文件
+             -的宏定义。
+  95                                   *                      ADC acquisition accuracy, different chip models, 
+  96                                   *                      the highest accuracy is different, 
+  97                                   *                      please check the macro definition of the header file.
+  98                                   * @param[in]  acc      ADC采集精度，不同的芯片型号，最高精度有所不同，请查看�
+             -��文件的宏定义。
+  99                                   *                      ADC acquisition accuracy, different chip models, 
+ 100                                   *                      the highest accuracy is different, 
+ 101                                   *                      please check the macro definition of the header file.
+ 102                                   * @return         uint16_t 返回采集到的ADC值。Returns the collected ADC value.
+ 103                                   * @note        默认使用的是右对齐操作，如果读取的数据是左对齐，需要开发者
+             -自己处理。
+ 104                                  **/
+ 105                                  uint16_t ADC_Get_Sample(uint8_t channel, ADCAcc_Type acc)
+ 106                                  {       
+ 107   1                                      uint16_t value;
+ 108   1                                      ADC_RES = 0;
+ 109   1                                      ADC_RESL = 0;
+C51 COMPILER V9.01   STC8X_ADC                                                             08/04/2021 11:57:17 PAGE 3   
+
+ 110   1                                      ADC_CONTR = (ADC_CONTR & 0xF0) | ADC_POWER | (channel);
+ 111   1                                      while (!(ADC_CONTR & 0x20));  //Query ADC completion flag
+ 112   1                                      ADC_CONTR &= 0xDF;  //Completion mark
+ 113   1                                      value = (uint16_t)(ADC_RES << 8) | ADC_RESL;  
+ 114   1                                      value >>= acc; //Selection accuracy
+ 115   1                                      ADC_CONTR |= 0x40; //Restart
+ 116   1                                      return value;
+ 117   1                              }
+ 118          
+ 119                                  
+ 120                                  /**
+ 121                                   * @brief          ADC获取采集结果函数（中断法）。
+ 122                                   * @details        This is a ADC get sample function in interrupt. 
+ 123                                   * @param[in]  acc      ADC采集精度，不同的芯片型号，最高精度有所不同，请查看�
+             -��文件的宏定义。
+ 124                                   *                      ADC acquisition accuracy, different chip models, 
+ 125                                   *                      the highest accuracy is different, 
+ 126                                   *                      please check the macro definition of the header file.
+ 127                                   * @return         uint16_t 返回采集到的ADC值。Returns the collected ADC value.
+ 128                                   * @note        默认使用的是右对齐操作，如果读取的数据是左对齐，需要开发者
+             -自己处理。
+ 129                                  **/
+ 130                                  uint16_t ADC_Get_Sample_Interrupt(ADCAcc_Type acc)
+ 131                                  {       
+ 132   1                                      uint16_t value;
+ 133   1                                      ADC_RES = 0;
+ 134   1                                      ADC_RESL = 0;
+ 135   1                                      ADC_CONTR &= 0xDF;  //Completion mark
+ 136   1                                      value = (uint16_t)(ADC_RES << 8) | ADC_RESL;  
+ 137   1                                      value >>= acc; //Selection accuracy
+ 138   1                                      ADC_CONTR |= 0x40; //Restart
+ 139   1                                      return value;
+ 140   1                              }
+ 141                                  
+ 142                          #endif
+ 143                                  
+ 144          
+ 145                          #if (PER_LIB_ADC_WORK_CTRL == 1)
+ 146                                  
+ 147                      /**
+ 148                       * @brief      ADC中断初始化函数。
+ 149                       * @details    ADC interrupt initialization function.
+ 150                       * @param[in]  pri 中断优先级。Interrupt priority.
+ 151                       * @param[in]  run 中断运行控制位。Interrupt operation control bit.
+ 152                       * @return     FSC_SUCCESS 返回成功。Return to success.
+ 153                       * @return     FSC_FAIL    返回失败。Return to fail.
+ 154                      **/
+ 155                      FSCSTATE NVIC_ADC_Init(NVICPri_Type pri,BOOL run)
+ 156                      {
+ 157   1                      EADC = run;
+ 158   1                      NVIC_ADC_PRI(pri);
+ 159   1                      return FSC_SUCCESS;
+ 160   1                  }
+ 161          
+ 162                  #endif
+ 163          
+ 164                  #endif
+ 165                          
+ 166          #endif  
+ 167          /*-----------------------------------------------------------------------
+ 168          |                   END OF FLIE.  (C) COPYRIGHT zeweni                  |
+ 169          -----------------------------------------------------------------------*/
+C51 COMPILER V9.01   STC8X_ADC                                                             08/04/2021 11:57:17 PAGE 4   
+
+ 170          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    233    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

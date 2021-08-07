@@ -1,0 +1,4 @@
+>>库函数中使用的delay_ms()延时函数，需要通过微调LIB_CFG.H文件下的COM_LIB_PREDELAY_BASE变量以达到精准的ms，其中在11.0592Mhz下10500UL较为精准。
+>>可以在PreDelay.c中调节 G_MS_Count分频系数来获得更加短的延时如：i = G_MS_Count / 4
+
+

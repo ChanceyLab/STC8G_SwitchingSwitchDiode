@@ -1,0 +1,25 @@
+".\build\startup_stc8g.obj",
+".\build\STC8x_SYSCLK.obj",
+".\build\STC8x_ADC.obj",
+".\build\STC8x_EEPROM.obj",
+".\build\STC8x_COMP.obj",
+".\build\STC8x_GPIO.obj",
+".\build\STC8x_I2C.obj",
+".\build\STC8x_PCA.obj",
+".\build\STC8x_POWER.obj",
+".\build\STC8x_RST.obj",
+".\build\STC8x_SPI.obj",
+".\build\STC8x_TIMER.obj",
+".\build\STC8x_UART.obj",
+".\build\STC8x_WDT.obj",
+".\build\STC8x_HPWM.obj",
+".\build\STC8x_MDU16.obj",
+".\build\PreDelay.obj",
+".\build\PrintfRed.obj",
+".\build\TMT.obj",
+".\build\main.obj",
+".\build\init.obj",
+".\build\isr.obj" 
+TO ".\build\output" 
+
+PRINT(".\build\output.map") REMOVEUNUSED 

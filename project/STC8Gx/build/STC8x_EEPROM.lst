@@ -1,0 +1,275 @@
+C51 COMPILER V9.01   STC8X_EEPROM                                                          08/04/2021 11:57:17 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE STC8X_EEPROM
+OBJECT MODULE PLACED IN .\build\STC8x_EEPROM.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\..\libraries\peripherals\STC8x\src\STC8x_EEPROM.c LARGE OMF2 OPTIMIZE
+                    -(9,SPEED) BROWSE INCDIR(..\..\libraries;..\..\libraries\core;..\..\libraries\core\register\STC8x;..\..\libraries\core\st
+                    -artup\STC8x;..\..\libraries\drives;..\..\libraries\drives\KeyScan;..\..\libraries\peripherals;..\..\libraries\peripheral
+                    -s\STC8x\inc;..\..\libraries\peripherals\STC8x\src;..\..\libraries\components;..\..\libraries\components\TMT;..\..\librar
+                    -ies\components\PrintfRed;..\..\libraries\components\PreDelay;.\main;.\application) DEBUG PRINT(.\build\STC8x_EEPROM.lst)
+                    - OBJECT(.\build\STC8x_EEPROM.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------
+   2          |                            FILE DESCRIPTION                           |
+   3          -----------------------------------------------------------------------*/
+   4          /*----------------------------------------------------------------------
+   5            - File name     : STC8x_EEPROM.c
+   6            - Author        : zeweni
+   7            - Update date   : 2020.04.23
+   8            -     Copyright(C)  : 2020-2021 zeweni. All rights reserved.
+   9          -----------------------------------------------------------------------*/
+  10          /*------------------------------------------------------------------------
+  11          |                            COPYRIGHT NOTICE                            |
+  12          ------------------------------------------------------------------------*/
+  13          /*
+  14           * Copyright (C) 2021, zeweni (17870070675@163.com)
+  15          
+  16           * This file is part of 8051 ELL low-layer libraries.
+  17          
+  18           * 8051 ELL low-layer libraries is free software: you can redistribute 
+  19           * it and/or modify it under the terms of the Apache-2.0 License.
+  20          
+  21           * 8051 ELL low-layer libraries is distributed in the hope that it will 
+  22           * be useful,but WITHOUT ANY WARRANTY; without even the implied warranty 
+  23           * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+  24           * Apache-2.0 License for more details.
+  25          
+  26           * You should have received a copy of the Apache-2.0 License.8051 ELL 
+  27           * low-layer libraries. If not, see <http://www.apache.org/licenses/>.
+  28          **/
+  29          /*-----------------------------------------------------------------------
+  30          |                               INCLUDES                                |
+  31          -----------------------------------------------------------------------*/
+  32          #include "STC8x_EEPROM.h"
+  33          /*-----------------------------------------------------------------------
+  34          |                                 DATA                                  |
+  35          -----------------------------------------------------------------------*/
+  36          /* None. */
+  37          /*-----------------------------------------------------------------------
+  38          |                               FUNCTION                                |
+  39          -----------------------------------------------------------------------*/
+  40          #if (PER_LIB_EEPROM_CTRL == 1)
+  41          
+  42              /**
+  43               * @brief   空延时函数，帮助稳定EEPROM外设切换工作状态。
+  44               * Working wait nop function.
+  45               * @param   None.
+  46               * @return  None.
+  47              ***/
+  48              static void nop(void)
+  49              {
+  50   1              uint8_t i = 255;
+C51 COMPILER V9.01   STC8X_EEPROM                                                          08/04/2021 11:57:17 PAGE 2   
+
+  51   1              while(i--);
+  52   1          }
+  53          
+  54              /**
+  55               * @brief   EEPROM工作等待时间设置函数，仅限本文件内调用。
+  56               * @details EEPROM working wait time function.
+  57               *          only this file call.
+  58               * @param   None.
+  59               * @return  None.
+  60              ***/
+  61              static void EEPROM_WT_Time(void)
+  62              {   
+  63   1              extern uint32_t Get_SysClk_FRE(void);
+  64   1              uint32_t sysClk_FRE;
+  65   1              /* Get system clock frequency */
+  66   1              sysClk_FRE = Get_SysClk_FRE();
+  67   1              #if (PER_LIB_MCU_MUODEL == STC8Ax || PER_LIB_MCU_MUODEL == STC8Fx)
+              
+                          IAP_CONTR &= 0xF8;
+                          if (sysClk_FRE >= 30000000UL) IAP_CONTR |= 0x00;    
+                          else if ((sysClk_FRE >= 24000000UL) && (sysClk_FRE < 30000000UL)) IAP_CONTR |= 0x01;
+                          else if ((sysClk_FRE >= 20000000UL) && (sysClk_FRE < 24000000UL)) IAP_CONTR |= 0x02;
+                          else if ((sysClk_FRE >= 12000000UL) && (sysClk_FRE < 20000000UL)) IAP_CONTR |= 0x03;
+                          else if ((sysClk_FRE >=  6000000UL) && (sysClk_FRE < 12000000UL)) IAP_CONTR |= 0x04;
+                          else if ((sysClk_FRE >=  3000000UL) && (sysClk_FRE <  6000000UL)) IAP_CONTR |= 0x05;
+                          else if ((sysClk_FRE >=  2000000UL) && (sysClk_FRE <  3000000UL)) IAP_CONTR |= 0x06;
+                          else if ((sysClk_FRE >=  1000000UL) && (sysClk_FRE <  2000000UL)) IAP_CONTR |= 0x07;
+              
+                      #elif (PER_LIB_MCU_MUODEL == STC8Cx || PER_LIB_MCU_MUODEL == STC8Gx || PER_LIB_MCU_MUODEL == STC8H
+             -x)
+  80   1      
+  81   1                  IAP_TPS = (0xC0 & IAP_TPS) | (sysClk_FRE/1000000UL);
+  82   1      
+  83   1              #endif
+  84   1          }
+  85          
+  86              #if (PER_LIB_EEPROM_INIT_CTRL == 1)
+  87          
+  88                  /**
+  89                   * @brief     EEPROM初始化函数。
+  90                   * @details   EEPROM initialization function.
+  91                   * @param[in] run  运行控制位。Operation control bit.
+  92                   * @return    FSC_SUCCESS 返回成功。Return to success.
+  93                   * @return    FSC_FAIL    返回失败。Return to fail.
+  94                  **/
+  95                  FSCSTATE EEPROM_Init(BOOL run)
+  96                  {
+  97   1                  IAP_CONTR = (IAP_CONTR & 0x7F) | (run << 7);
+  98   1                  EEPROM_WT_Time();
+  99   1                  return FSC_SUCCESS;
+ 100   1              }
+ 101          
+ 102              #endif
+ 103          
+ 104          
+ 105              #if (PER_LIB_EEPROM_WORK_CTRL == 1)
+ 106          
+ 107                  /**
+ 108                   * @brief     EEPROM 擦除扇区函数。
+ 109                   * @details   EEPROM erase page function.
+ 110                   * @param[in] addr  扇区首地址（512字节为一个扇区，地址要能被512整除）。
+ 111                   *                    The first address of a sector (512 bytes is a sector, 
+C51 COMPILER V9.01   STC8X_EEPROM                                                          08/04/2021 11:57:17 PAGE 3   
+
+ 112                   *                    and the address should be divisible by 512).
+ 113                   * @return    FSC_SUCCESS 返回成功。Return to success.
+ 114                   * @return    FSC_FAIL    返回失败。Return to fail.
+ 115                  **/
+ 116                  FSCSTATE EEPROM_Erase_Page(uint16_t addr)
+ 117                  {
+ 118   1                  IAP_CONTR |= 0x80;
+ 119   1                  IAP_CMD = 3;            //Set IAP write command
+ 120   1                  IAP_ADDRH = addr >> 8;      //Set IAP high address
+ 121   1                  IAP_ADDRL = addr;           //Set IAP low address
+ 122   1                  IAP_TRIG = 0x5A;            //Write trigger command (0x5a)
+ 123   1                  IAP_TRIG = 0xA5;            //Write trigger command (0x5a)  
+ 124   1                  nop();
+ 125   1                  IAP_CONTR &= 0x7F;
+ 126   1                  return FSC_SUCCESS;
+ 127   1              }
+ 128          
+ 129                  /**
+ 130                   * @brief     EEPROM读取一个字节函数。
+ 131                   * @details   EEPROM reads a byte function.  
+ 132                   * @param[in] addr flash地址。Falsh address.
+ 133                   * @return    [uint8_t] 一个字节的数据。Data of byte.  
+ 134                  **/
+ 135                  uint8_t EEPROM_Read_Byte(uint16_t addr)
+ 136                  {
+ 137   1                  uint8_t dat;
+ 138   1                  IAP_CONTR |= 0x80;
+ 139   1                  IAP_CMD = 1;  //Set IAP read command
+ 140   1                  IAP_ADDRH = addr >> 8;      //Set IAP high address
+ 141   1                  IAP_ADDRL = addr;           //Set IAP low address
+ 142   1                  IAP_TRIG  = 0x5A;           //Write trigger command (0x5a)
+ 143   1                  IAP_TRIG  = 0xA5;           //Write trigger command (0xa5)
+ 144   1                  dat = IAP_DATA;
+ 145   1                  nop();
+ 146   1                  IAP_CONTR &= 0x7F;
+ 147   1                  return dat;
+ 148   1              }
+ 149          
+ 150          
+ 151                  /**
+ 152                   * @brief       EEPROM读取一个数组函数。
+ 153                   * @details     EEPROM read Arry function.  
+ 154                   * @param[in]   addr   Falsh地址。falsh address.
+ 155                   * @param[out]  arry   数组的首地址。The first address of the array.
+ 156                   * @param[in]   len    数组长度。arry length. 
+ 157                   * @return     FSC_SUCCESS 返回成功。Return to succe
+ 158                   * @return     FSC_FAIL    返回失败。Return to fail.
+ 159                  ***/
+ 160                  FSCSTATE EEPROM_Read_Arry(uint16_t addr,uint8_t *arry,uint8_t len)
+ 161                  {
+ 162   1                  while(len--)
+ 163   1                  {
+ 164   2                      *arry++ = EEPROM_Read_Byte(addr++);
+ 165   2                  }
+ 166   1                  return FSC_SUCCESS;
+ 167   1              }
+ 168          
+ 169          
+ 170                  /**
+ 171                   * @brief     EEPROM写一个字节函数。
+ 172                   * @details   EEPROM writes a byte function.  
+ 173                   * @param[in] addr flash地址。Falsh address.
+C51 COMPILER V9.01   STC8X_EEPROM                                                          08/04/2021 11:57:17 PAGE 4   
+
+ 174                   * @param[in] byte  一个字节的数据。Data of byte.  
+ 175                   * @return    FSC_SUCCESS 返回成功。Return to success.
+ 176                   * @return    FSC_FAIL    返回失败。Return to fail.
+ 177                  **/
+ 178                  FSCSTATE EEPROM_Write_Byte(uint16_t addr,uint8_t byte)
+ 179                  {
+ 180   1                  IAP_CONTR |= 0x80;
+ 181   1                  IAP_CMD = 2;  //Set IAP write command
+ 182   1                  IAP_ADDRH = addr >> 8;      //Set IAP high address
+ 183   1                  IAP_ADDRL = addr;           //Set IAP low address
+ 184   1                  IAP_DATA =  byte;           //Read IAP data 
+ 185   1                  IAP_TRIG  = 0x5A;           //Write trigger command (0x5a)
+ 186   1                  IAP_TRIG  = 0xA5;           //Write trigger command (0xa5)
+ 187   1                  nop();
+ 188   1                  IAP_CONTR &= 0x7F;
+ 189   1                  return FSC_SUCCESS;
+ 190   1              }
+ 191          
+ 192          
+ 193                  /**
+ 194                   * @brief     EEPROM写一个字符串。
+ 195                   * @details   EEPROM write string function .  
+ 196                   * @param[in] addr   Falsh地址。falsh address.
+ 197                   * @param[in] str  字符串的首地址。The first address of the string.
+ 198                   * @return    FSC_SUCCESS 返回成功。Return to success.
+ 199                   * @return    FSC_FAIL    返回失败。Return to fail.
+ 200                  **/
+ 201                  FSCSTATE EEPROM_Write_Str(uint16_t addr,const uint8_t* str)
+ 202                  {
+ 203   1                  while(*str != '\0')
+ 204   1                  {
+ 205   2                      EEPROM_Write_Byte(addr++,*str++);
+ 206   2                  }
+ 207   1                  return FSC_SUCCESS;
+ 208   1              }
+ 209          
+ 210          
+ 211                  /**
+ 212                   * @brief      EEPROM写一个数组函数。
+ 213                   * @details    EEPROM write a Arry function.  
+ 214                   * @param[in]  addr  Falsh地址。falsh address.
+ 215                   * @param[in]  arry  数组的首地址。The first address of the array.
+ 216                   * @param[in]  len   数组长度。arry length. 
+ 217                   * @return     FSC_SUCCESS 返回成功。Return to success.
+ 218                   * @return     FSC_FAIL    返回失败。Return to fail.
+ 219                  **/
+ 220                  FSCSTATE EEPROM_Write_Arry(uint16_t addr,const uint8_t *arry,uint8_t len)
+ 221                  {
+ 222   1                  while(len--)
+ 223   1                  {
+ 224   2                      EEPROM_Write_Byte(addr++,*arry++);
+ 225   2                  }
+ 226   1                  return FSC_SUCCESS;
+ 227   1              }
+ 228          
+ 229              #endif
+ 230          
+ 231          #endif
+ 232          /*-----------------------------------------------------------------------
+ 233          |                   END OF FLIE.  (C) COPYRIGHT zeweni                  | 
+ 234          -----------------------------------------------------------------------*/
+
+C51 COMPILER V9.01   STC8X_EEPROM                                                          08/04/2021 11:57:17 PAGE 5   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    307    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      17
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,130 @@
+C51 COMPILER V9.01   PREDELAY                                                              08/04/2021 11:57:19 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE PREDELAY
+OBJECT MODULE PLACED IN .\build\PreDelay.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\..\libraries\components\PreDelay\PreDelay.c LARGE OMF2 OPTIMIZE(9,SPE
+                    -ED) BROWSE INCDIR(..\..\libraries;..\..\libraries\core;..\..\libraries\core\register\STC8x;..\..\libraries\core\startup\
+                    -STC8x;..\..\libraries\drives;..\..\libraries\drives\KeyScan;..\..\libraries\peripherals;..\..\libraries\peripherals\STC8
+                    -x\inc;..\..\libraries\peripherals\STC8x\src;..\..\libraries\components;..\..\libraries\components\TMT;..\..\libraries\co
+                    -mponents\PrintfRed;..\..\libraries\components\PreDelay;.\main;.\application) DEBUG PRINT(.\build\PreDelay.lst) OBJECT(.\
+                    -build\PreDelay.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------
+   2          |                            FILE DESCRIPTION                           |
+   3          -----------------------------------------------------------------------*/
+   4          /*----------------------------------------------------------------------
+   5            - File name     : Predelay.h
+   6            - Author        : zeweni
+   7            - Update date   : 2020.05.07                
+   8            -     Copyright(C)  : 2020-2021 zeweni. All rights reserved.
+   9          -----------------------------------------------------------------------*/
+  10          /*------------------------------------------------------------------------
+  11          |                            COPYRIGHT NOTICE                            |
+  12          ------------------------------------------------------------------------*/
+  13          /*
+  14           * Copyright (C) 2021, zeweni (17870070675@163.com)
+  15          
+  16           * This file is part of 8051 ELL low-layer libraries.
+  17          
+  18           * 8051 ELL low-layer libraries is free software: you can redistribute 
+  19           * it and/or modify it under the terms of the Apache-2.0 License.
+  20          
+  21           * 8051 ELL low-layer libraries is distributed in the hope that it will 
+  22           * be useful,but WITHOUT ANY WARRANTY; without even the implied warranty 
+  23           * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+  24           * Apache-2.0 License for more details.
+  25          
+  26           * You should have received a copy of the Apache-2.0 License.8051 ELL 
+  27           * low-layer libraries. If not, see <http://www.apache.org/licenses/>.
+  28          **/
+  29          /*-----------------------------------------------------------------------
+  30          |                               INCLUDES                                |
+  31          -----------------------------------------------------------------------*/
+  32          #include "PreDelay.h"
+  33          /*-----------------------------------------------------------------------
+  34          |                                 DATA                                  |
+  35          -----------------------------------------------------------------------*/
+  36          static uint16_t G_MS_Count = 0;
+  37          /*-----------------------------------------------------------------------
+  38          |                               FUNCTION                                |
+  39          -----------------------------------------------------------------------*/
+  40          #if (COM_LIB_PREDELAY_CTRL == 1)
+  41          
+  42              /**
+  43               * @brief      精准延时组件初始化。
+  44               * @details    Precisely delay component initialization.  
+  45               * @param      None.
+  46               * @return     FSC_SUCCESS 返回成功。Return to success.
+  47               * @return     FSC_FAIL    返回失败。Return to fail.
+  48              **/
+  49              FSCSTATE Pre_Delay_init(void)
+  50              {
+C51 COMPILER V9.01   PREDELAY                                                              08/04/2021 11:57:19 PAGE 2   
+
+  51   1              extern uint32_t Get_SysClk_FRE(void);
+  52   1              uint32_t sysClk_FRE;
+  53   1              /* Get system clock frequency */
+  54   1              sysClk_FRE = Get_SysClk_FRE();
+  55   1              G_MS_Count = sysClk_FRE / DELAY_COUNT;
+  56   1              return FSC_SUCCESS;
+  57   1          }
+  58          
+  59          
+  60              /**
+  61               * @brief      上电延时，帮助系统稳定。
+  62               * @details    Power-on delay helps to stabilize the system.
+  63               * @param      None.
+  64               * @return     None.
+  65              **/
+  66              void Pre_Delay_Pos(void) 
+  67              {
+  68   1              uint16_t i = 10000;
+  69   1              for(; i>0; i--);
+  70   1          }
+  71          
+  72          
+  73              /**
+  74               * @brief      延时一段时间，ms级别。
+  75               * @details    Delay for a period of time, ms level.  
+  76               * @param[in]  nms 延时时间.Delay time.
+  77               * @return     None.
+  78              **/
+  79              void Pre_Delay_ms(uint16_t nms)
+  80              {
+  81   1              uint16_t i;
+  82   1              for(; nms>0; nms--)
+  83   1              {                       
+  84   2                  i = G_MS_Count / 2;
+  85   2                  while(--i);
+  86   2              }
+  87   1          }
+  88          
+  89          #endif
+  90          /*-----------------------------------------------------------------------
+  91          |                   END OF FLIE.  (C) COPYRIGHT zeweni                  |
+  92          -----------------------------------------------------------------------*/
+  93          
+  94          
+  95          
+  96          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     78    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,316 @@
+C51 COMPILER V9.01   STC8X_I2C                                                             08/04/2021 11:57:18 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE STC8X_I2C
+OBJECT MODULE PLACED IN .\build\STC8x_I2C.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\..\libraries\peripherals\STC8x\src\STC8x_I2C.c LARGE OMF2 OPTIMIZE(9,
+                    -SPEED) BROWSE INCDIR(..\..\libraries;..\..\libraries\core;..\..\libraries\core\register\STC8x;..\..\libraries\core\start
+                    -up\STC8x;..\..\libraries\drives;..\..\libraries\drives\KeyScan;..\..\libraries\peripherals;..\..\libraries\peripherals\S
+                    -TC8x\inc;..\..\libraries\peripherals\STC8x\src;..\..\libraries\components;..\..\libraries\components\TMT;..\..\libraries
+                    -\components\PrintfRed;..\..\libraries\components\PreDelay;.\main;.\application) DEBUG PRINT(.\build\STC8x_I2C.lst) OBJEC
+                    -T(.\build\STC8x_I2C.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------
+   2          |                            FILE DESCRIPTION                           |
+   3          -----------------------------------------------------------------------*/
+   4          /*----------------------------------------------------------------------
+   5            - File name     : STC8x_I2C.c
+   6            - Author        : zeweni
+   7            - Update date   : 2020.02.06
+   8            -     Copyright(C)  : 2020-2021 zeweni. All rights reserved.
+   9          -----------------------------------------------------------------------*/
+  10          /*------------------------------------------------------------------------
+  11          |                            COPYRIGHT NOTICE                            |
+  12          ------------------------------------------------------------------------*/
+  13          /*
+  14           * Copyright (C) 2021, zeweni (17870070675@163.com)
+  15          
+  16           * This file is part of 8051 ELL low-layer libraries.
+  17          
+  18           * 8051 ELL low-layer libraries is free software: you can redistribute 
+  19           * it and/or modify it under the terms of the Apache-2.0 License.
+  20          
+  21           * 8051 ELL low-layer libraries is distributed in the hope that it will 
+  22           * be useful,but WITHOUT ANY WARRANTY; without even the implied warranty 
+  23           * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+  24           * Apache-2.0 License for more details.
+  25          
+  26           * You should have received a copy of the Apache-2.0 License.8051 ELL 
+  27           * low-layer libraries. If not, see <http://www.apache.org/licenses/>.
+  28          **/
+  29          /*-----------------------------------------------------------------------
+  30          |                               INCLUDES                                |
+  31          -----------------------------------------------------------------------*/
+  32          #include "STC8x_I2C.h"
+  33          
+  34          /*-----------------------------------------------------------------------
+  35          |                                 DATA                                  |
+  36          -----------------------------------------------------------------------*/
+  37          /* None */
+  38          /*-----------------------------------------------------------------------
+  39          |                               FUNCTION                                |
+  40          -----------------------------------------------------------------------*/
+  41          #if (PER_LIB_I2C_CTRL == 1)
+  42          
+  43                  /**
+  44                   * @brief     延时us函数，帮助稳定I2C外设切换工作状态。
+  45                   * @details   I2C delay us function.
+  46                   * @param[in] nus 延时us的时间。The time of delay.
+  47                   * @return    None.
+  48                  **/
+  49                  static void I2C_Delay_us(uint8_t nus)
+  50                  {
+C51 COMPILER V9.01   STC8X_I2C                                                             08/04/2021 11:57:18 PAGE 2   
+
+  51   1                      uint8_t i;
+  52   1                      while(nus--)
+  53   1                      {
+  54   2                              i = 6;
+  55   2                              while (--i);
+  56   2                      }  
+  57   1              }
+  58          
+  59          
+  60                  /**
+  61                   * @brief   计算I2C等待时间函数。
+  62                   * @details I2C wait time function.
+  63                   * @param   None.
+  64                   * @return  FSC_SUCCESS 返回成功。Return to success.
+  65                   * @return  FSC_FAIL    返回失败。Return to fail.
+  66                  **/
+  67                  static FSCSTATE I2C_Wait(void)
+  68                  {
+  69   1                      uint8_t count = 0;
+  70   1                      while (!(I2CMSST & 0x40))
+  71   1                      {
+  72   2                              I2C_Delay_us(1);
+  73   2                              if(count++ >= 30) //等待超过30us，则退出等待。
+  74   2                              {
+  75   3                                      count = 0;
+  76   3                                      return FSC_FAIL;
+  77   3                              }
+  78   2                      }
+  79   1                      I2CMSST &= 0xBF;
+  80   1                      return FSC_SUCCESS;  
+  81   1              }
+  82          
+  83                  #if (PER_LIB_I2C_INIT_CTRL == 1)
+  84                  
+  85                          /**
+  86                           * @brief     I2C初始化函数。
+  87                           * @details   I2C initialization function.
+  88                           * @param[in] type  I2C工作模式（主从机）。I2C working mode (master-slave).
+  89                           * @param[in] wTime I2C等待时间。value of wait time.
+  90                           * @param[in] run   运行控制位。Operation control bit.
+  91                           * @return    FSC_SUCCESS 返回成功。Return to success.
+  92                           * @return    FSC_FAIL    返回失败。Return to fail.
+  93                          **/
+  94                          FSCSTATE I2C_Init(I2CType_Type type, uint8_t wTime, BOOL run)
+  95                          {
+  96   1                        if(wTime <= 0x3F)
+  97   1                        {
+  98   2                              EAXFR_ENABLE();
+  99   2                              I2CCFG = (I2CCFG & 0xBF) | (type << 6);
+ 100   2                              I2CCFG = (I2CCFG & 0xC0) | (wTime);
+ 101   2                              I2CCFG = (I2CCFG & 0x7F) | (run << 7);
+ 102   2                              EAXFR_DISABLE();
+ 103   2                              return FSC_SUCCESS;
+ 104   2                        }
+ 105   1                        else return FSC_FAIL;
+ 106   1                      }
+ 107                          
+ 108                  #endif
+ 109                  
+ 110                  #if (PER_LIB_I2C_NVIC_CTRL == 1)
+ 111                          
+ 112                          /**
+C51 COMPILER V9.01   STC8X_I2C                                                             08/04/2021 11:57:18 PAGE 3   
+
+ 113                           * @brief     I2C主机中断初始化函数。
+ 114                           * @details   I2C Master init NVIC function.  
+ 115                           * @param[in] pri 中断优先级。interrupt priority.
+ 116                           * @param[in] run 使能控制位。enable control. 
+ 117                           * @return    FSC_SUCCESS 返回成功。Return to success.
+ 118                           * @return    FSC_FAIL    返回失败。Return to fail.
+ 119                          **/
+ 120                          FSCSTATE NVCI_I2C_Master_Init(NVICPri_Type pri,BOOL run)
+ 121                          {
+ 122   1                              EAXFR_ENABLE();
+ 123   1                              NVIC_I2C_PRI(pri);
+ 124   1                              I2CMSCR = run << 7;
+ 125   1                              EAXFR_DISABLE();
+ 126   1                              return FSC_SUCCESS;
+ 127   1                      }
+ 128          
+ 129          
+ 130                          /**
+ 131                           * @brief     I2C从机中断初始化函数。
+ 132                           * @details   I2C Slave init NVIC function.  
+ 133                           * @param[in] pri      中断优先级。interrupt priority.
+ 134                           * @param[in] triMode  触发模式，可以选择多个，并用或运算符连接。
+ 135                           *                     Trigger mode, multiple can be selected 
+ 136                           *                     and connected with or operator.
+ 137                           * @return    FSC_SUCCESS 返回成功。Return to success.
+ 138                           * @return    FSC_FAIL    返回失败。Return to fail.
+ 139                          **/
+ 140                          FSCSTATE NVCI_I2C_Slave_Init(NVICPri_Type pri,I2CSTri_Type triState)
+ 141                          {
+ 142   1                              EAXFR_ENABLE();
+ 143   1                              NVIC_I2C_PRI(pri);
+ 144   1                              I2CSLCR &= (I2CSLCR & 0x01 )| (triState);
+ 145   1                              EAXFR_DISABLE();
+ 146   1                              return FSC_SUCCESS;
+ 147   1                      }
+ 148                  
+ 149                  #endif
+ 150                          
+ 151                  #if (PER_LIB_I2C_WORK_CTRL == 1)        
+ 152                          
+ 153                          /**
+ 154                           * @brief   I2C发送开始信号函数。
+ 155                           * @details I2C sends signal of start function.  
+ 156                           * @param   None. 
+ 157                           * @return  FSC_SUCCESS 返回成功。Return to success.
+ 158                           * @return  FSC_FAIL    返回失败。Return to fail.
+ 159                          **/
+ 160                          FSCSTATE I2C_Send_Start(void)
+ 161                          {
+ 162   1                        I2CMSCR = 0x01;    
+ 163   1                        return I2C_Wait();
+ 164   1                      }
+ 165          
+ 166          
+ 167                          /**
+ 168                           * @brief   I2C发送停止信号函数。
+ 169                           * @details I2C sends signal of stop function.  
+ 170                           * @param   None. 
+ 171                           * @return  FSC_SUCCESS 返回成功。Return to success.
+ 172                           * @return  FSC_FAIL    返回失败。Return to fail.
+ 173                          **/
+ 174                          FSCSTATE I2C_Send_Stop(void)
+C51 COMPILER V9.01   STC8X_I2C                                                             08/04/2021 11:57:18 PAGE 4   
+
+ 175                          {
+ 176   1                        I2CMSCR = 0x06;                          
+ 177   1                        return I2C_Wait();
+ 178   1                      }
+ 179          
+ 180          
+ 181                          /**
+ 182                           * @brief   I2C发送ACK信号函数。
+ 183                           * @details I2C sends signal of ACK function.  
+ 184                           * @param   None. 
+ 185                           * @return  FSC_SUCCESS 返回成功。Return to success.
+ 186                           * @return  FSC_FAIL    返回失败。Return to fail.
+ 187                          **/
+ 188                          FSCSTATE I2C_Send_ACK(void)
+ 189                          {
+ 190   1                        I2CMSST = 0x00;                            
+ 191   1                        I2CMSCR = 0x05;    
+ 192   1                        return I2C_Wait();
+ 193   1                      }
+ 194          
+ 195          
+ 196                          /**
+ 197                           * @brief   I2C发送NACK信号函数。
+ 198                           * @details I2C sends signal of NACK function.  
+ 199                           * @param   None. 
+ 200                           * @return  FSC_SUCCESS 返回成功。Return to success.
+ 201                           * @return  FSC_FAIL    返回失败。Return to fail.
+ 202                          **/
+ 203                          FSCSTATE I2C_Send_NACK(void)
+ 204                          {
+ 205   1                        I2CMSST = 0x01;                          
+ 206   1                        I2CMSCR = 0x05;                           
+ 207   1                        I2C_Wait();
+ 208   1                        return FSC_SUCCESS;
+ 209   1                      }
+ 210          
+ 211          
+ 212                          /**
+ 213                           * @brief   I2C读取ACK信号函数。
+ 214                           * @details I2C reads signal of ACK function.  
+ 215                           * @param   None. 
+ 216                           * @return  FSC_SUCCESS 返回成功。Return to success.
+ 217                           * @return  FSC_FAIL    返回失败。Return to fail.
+ 218                          **/
+ 219                          FSCSTATE I2C_Read_ACK(void)
+ 220                          {
+ 221   1                        I2CMSCR = 0x03;                             
+ 222   1                        return I2C_Wait();
+ 223   1                      }
+ 224          
+ 225          
+ 226                          /**
+ 227                           * @brief     I2C发送一个字节函数。
+ 228                           * @details   I2C sends a byte data function.  
+ 229                           * @param[in] dat 字节数据。byte data.
+ 230                           * @return    FSC_SUCCESS 返回成功。Return to success.
+ 231                           * @return    FSC_FAIL    返回失败。Return to fail.
+ 232                          **/
+ 233                          FSCSTATE I2C_Send_Btye(uint8_t dat)
+ 234                          {
+ 235   1                        I2CTXD = dat;
+ 236   1                        I2CMSCR = 0x02;
+C51 COMPILER V9.01   STC8X_I2C                                                             08/04/2021 11:57:18 PAGE 5   
+
+ 237   1                        return I2C_Wait();
+ 238   1                      }
+ 239          
+ 240          
+ 241                          /**
+ 242                           * @brief   I2C读取一个字节函数。
+ 243                           * @details I2C reads a byte data function.  
+ 244                           * @param   None.
+ 245                           * @return  [uint8_t] data of recive.
+ 246                          **/
+ 247                          uint8_t I2C_Read_Byte(void)       
+ 248                          {
+ 249   1                              I2CMSCR = 0x04;     //发送RECV命令
+ 250   1                              I2C_Wait();
+ 251   1                              return I2CRXD;
+ 252   1                      }
+ 253          
+ 254          
+ 255                          /**
+ 256                           * @brief     I2C切换复用IO函数。
+ 257                           * @details   I2C switch out port control function.  
+ 258                           * @param[in] port 复用IO枚举体。IO switch enumerator.
+ 259                           * @return    FSC_SUCCESS 返回成功。Return to success.
+ 260                           * @return    FSC_FAIL    返回失败。Return to fail.
+ 261                          **/
+ 262                          FSCSTATE GPIO_I2C_SWPort(GPIOSWPort_Type port)
+ 263                          {
+ 264   1                              P_SW2 = (P_SW2 & 0xC0) | (port << 4);
+ 265   1                              return FSC_FAIL;
+ 266   1                      }
+ 267                  
+ 268                  #endif
+ 269                  
+ 270          #endif
+ 271          /*-----------------------------------------------------------------------
+ 272          |                   END OF FLIE.  (C) COPYRIGHT zeweni                  |
+ 273          -----------------------------------------------------------------------*/
+ 274          
+ 275          
+ 276          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    274    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

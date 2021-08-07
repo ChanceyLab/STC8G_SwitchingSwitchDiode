@@ -1,0 +1,290 @@
+C51 COMPILER V9.01   TMT                                                                   08/04/2021 11:57:19 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE TMT
+OBJECT MODULE PLACED IN .\build\TMT.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ..\..\libraries\components\TMT\TMT.c LARGE OMF2 OPTIMIZE(9,SPEED) BROWSE
+                    - INCDIR(..\..\libraries;..\..\libraries\core;..\..\libraries\core\register\STC8x;..\..\libraries\core\startup\STC8x;..\.
+                    -.\libraries\drives;..\..\libraries\drives\KeyScan;..\..\libraries\peripherals;..\..\libraries\peripherals\STC8x\inc;..\.
+                    -.\libraries\peripherals\STC8x\src;..\..\libraries\components;..\..\libraries\components\TMT;..\..\libraries\components\P
+                    -rintfRed;..\..\libraries\components\PreDelay;.\main;.\application) DEBUG PRINT(.\build\TMT.lst) OBJECT(.\build\TMT.obj)
+
+line level    source
+
+   1          /*-----------------------------------------------------------------------
+   2          |                            FILE DESCRIPTION                           |
+   3          -----------------------------------------------------------------------*/
+   4          /*----------------------------------------------------------------------
+   5            - File name     : TMT.c
+   6            - Author        : zeweni
+   7            - Update date   : 2020.01.11                  
+   8            -     Copyright(c)  : 2020-2021 zeweni. All rights reserved.
+   9          -----------------------------------------------------------------------*/
+  10          /*------------------------------------------------------------------------
+  11          |                            COPYRIGHT NOTICE                            |
+  12          ------------------------------------------------------------------------*/
+  13          /*
+  14           * Copyright (C) 2021, zeweni (17870070675@163.com)
+  15          
+  16           * This file is part of 8051 ELL low-layer libraries.
+  17          
+  18           * 8051 ELL low-layer libraries is free software: you can redistribute 
+  19           * it and/or modify it under the terms of the Apache-2.0 License.
+  20          
+  21           * 8051 ELL low-layer libraries is distributed in the hope that it will 
+  22           * be useful,but WITHOUT ANY WARRANTY; without even the implied warranty 
+  23           * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+  24           * Apache-2.0 License for more details.
+  25          
+  26           * You should have received a copy of the Apache-2.0 License.8051 ELL 
+  27           * low-layer libraries. If not, see <http://www.apache.org/licenses/>.
+  28          **/
+  29          /*-----------------------------------------------------------------------
+  30          |                               INCLUDES                                |
+  31          -----------------------------------------------------------------------*/
+  32          #include "TMT.h"
+  33          /*-----------------------------------------------------------------------
+  34          |                                 DATA                                  |
+  35          -----------------------------------------------------------------------*/
+  36          #if (COM_LIB_TMT_CTRL == 1)
+              
+              /*--------------------------------------------------------
+              | @Description: Task object definition                   |
+              --------------------------------------------------------*/
+              
+              TMT_Object TMT;
+              
+              /*--------------------------------------------------------
+              | @Description: Task definition                          |
+              --------------------------------------------------------*/
+              
+              typedef struct 
+              {
+                      void (* TaskFunction) (void); //Task function to run
+                  uint16_t TIMCount;         //Time counter
+C51 COMPILER V9.01   TMT                                                                   08/04/2021 11:57:19 PAGE 2   
+
+                      uint16_t TRITime;          //Task running interval
+                      uint8_t Run;               //Program running flag
+              }TASK_COMPONENTS;       
+              
+              static struct Task_Object
+              {
+                      TASK_COMPONENTS Comp[TASKS_MAX];
+                      uint8_t Number_Max;
+              }Task_Object;
+              
+              /*--------------------------------------------------------
+              | @Description: Task execution status                    |
+              --------------------------------------------------------*/
+              
+              static uint8_t tmt_state = 0; /* Initialize to 0 */
+              
+              /*--------------------------------------------------------
+              | @Description: function                                 |
+              --------------------------------------------------------*/
+              
+              static void TMT_Tick_t(void);
+              static void TMT_Run_t(void);
+              static FSCSTATE TMT_Delete_t(void (*taskFunc) (void));
+              static FSCSTATE TMT_Create_t(void (*taskFunc) (void),uint16_t triTime);
+              static FSCSTATE TMT_TimeCtrl_t(void (*taskFunc) (void),uint16_t triTime);
+              static FSCSTATE TMT_RunCtrl_t(void (*taskFunc) (void),TaskState_Type state);
+              
+              /*-----------------------------------------------------------------------
+              |                               FUNCTION                                |
+              -----------------------------------------------------------------------*/
+              
+              /**
+                * @name    TMT_Init
+                * @brief   Init TMT tool function
+                * @param   None
+                * @return  None
+              ***/
+              void TMT_Init(void)
+              {
+                      TMT.Run = TMT_Run_t;
+                      TMT.Tick = TMT_Tick_t;
+                      TMT.Create = TMT_Create_t;
+                      TMT.Delete = TMT_Delete_t;
+                      TMT.TimeCtrl = TMT_TimeCtrl_t;
+                      TMT.RunCtrl = TMT_RunCtrl_t;
+                      Task_Object.Number_Max = 0;
+              }
+              
+              /**
+                * @name    TMT_Tick_t
+                * @brief   Get ticks of task function
+                * @param   None
+                * @return  None
+              ***/
+              void TMT_Tick_t(void)
+              {
+                      uint8_t i;
+                      for(i=0; i<Task_Object.Number_Max; i++)
+                  {
+                               /* If time arrives */
+                      if(Task_Object.Comp[i].TIMCount > 0 )
+                      {
+C51 COMPILER V9.01   TMT                                                                   08/04/2021 11:57:19 PAGE 3   
+
+                          Task_Object.Comp[i].TIMCount--;
+                      }
+                              
+                      }       
+              }
+              
+              /**
+                * @name    TMT_Run_t
+                * @brief   Task run function
+                * @param   None
+                * @return  None
+              ***/
+              void TMT_Run_t(void)
+              {
+                      uint8_t i;
+                      for(i=0; i<Task_Object.Number_Max; i++){
+                               /* If time arrives */
+                              if(Task_Object.Comp[i].TIMCount == 0 && Task_Object.Comp[i].Run == 1)
+                              {
+                                      Task_Object.Comp[i].TIMCount = Task_Object.Comp[i].TRITime;
+                                      /* 
+                                              To prevent process conflict, 
+                                              only one process can be executed in the same time period.
+                                      */
+                                  Task_Object.Comp[i].TaskFunction();  /* Run task */
+                              }
+                      }
+              }
+              
+              /**
+                * @name    TMT_Create_t
+                * @brief   Create task function
+                * @param   *taskFunc (void)   A pointer function without formal parameters.
+                * @param   triTime  task run time (ticks)
+                * @return  None
+              ***/
+              FSCSTATE TMT_Create_t(void (* taskFunc) (void),uint16_t triTime)
+              {       
+                  static uint8_t task_num = 0; /* Initialize to 0 */
+                      if(task_num>=0 && task_num < TASKS_MAX)
+                      {
+                              Task_Object.Comp[task_num].TaskFunction = taskFunc;
+                              Task_Object.Comp[task_num].TRITime = triTime;
+                              Task_Object.Comp[task_num].TIMCount = triTime;
+                              Task_Object.Comp[task_num].Run = 1;
+                              task_num += 1;
+                              Task_Object.Number_Max = task_num;
+                              return FSC_SUCCESS;
+                      }
+                      else
+                      {
+                              return FSC_FAIL;        
+                      }               
+              }
+              
+              /**
+                * @name    TMT_Delete_t
+                * @brief   Delete task function
+                * @param   *taskFunc (void)   A pointer function without formal parameters.
+                * @return  None
+              ***/
+              FSCSTATE TMT_Delete_t(void (* taskFunc) (void))
+C51 COMPILER V9.01   TMT                                                                   08/04/2021 11:57:19 PAGE 4   
+
+              {       
+                      uint8_t i;
+                      if(Task_Object.Number_Max > 0 && Task_Object.Number_Max < Task_Object.Number_Max)
+                      {
+                              NVIC_TIMER_ISR_DISABLE();
+                              for(i=0; i<Task_Object.Number_Max; i++)
+                              {
+                                      if(Task_Object.Comp[i].TaskFunction == taskFunc)
+                                      {
+                                                      Task_Object.Comp[i].TaskFunction = Task_Object.Comp[Task_Object.Number_Max-1].TaskFunction;
+                                                      Task_Object.Comp[i].TRITime = Task_Object.Comp[Task_Object.Number_Max-1].TRITime;
+                                                      Task_Object.Comp[i].TIMCount = Task_Object.Comp[Task_Object.Number_Max-1].TIMCount;
+                                                      Task_Object.Comp[i].Run = Task_Object.Comp[Task_Object.Number_Max-1].Run;
+                                                      Task_Object.Number_Max -= 1;
+                                                      return FSC_SUCCESS;
+                                      }
+                              }
+                              NVIC_TIMER_ISR_ENABLE();
+                              return FSC_SUCCESS;
+                      }
+                      else 
+                      {
+                      return FSC_FAIL;                
+                      }
+              }
+              
+              
+              /**
+                * @name    TMT_RunCtrl_t
+                * @brief   Control task run function
+                * @param   *taskFunc (void)   A pointer function without formal parameters.
+                * @param   state   Task_Continue | Task_Stop
+                * @return  None
+              ***/
+              FSCSTATE TMT_RunCtrl_t(void (* taskFunc) (void),TaskState_Type state)
+              {
+                      uint8_t i;
+                      for(i=0; i<Task_Object.Number_Max; i++)
+                      {
+                              if(Task_Object.Comp[i].TaskFunction == taskFunc)
+                              {
+                                  Task_Object.Comp[i].Run = state;
+                                      return FSC_SUCCESS;
+                              }
+                      }
+                      return FSC_FAIL;
+              }
+              
+              /**
+                * @name    TMT_TimeCtrl_t
+                * @brief   Control task time function
+                * @param   *taskFunc (void)   A pointer function without formal parameters.
+                * @param   triTime  task run time (ticks)
+                * @return  None
+              ***/
+              FSCSTATE TMT_TimeCtrl_t(void (* taskFunc) (void),uint16_t triTime)
+              {       
+                      uint8_t i;
+                      for(i=0; i<Task_Object.Number_Max; i++)
+                      {
+                              if(Task_Object.Comp[i].TaskFunction == taskFunc)
+                              {
+C51 COMPILER V9.01   TMT                                                                   08/04/2021 11:57:19 PAGE 5   
+
+                                      Task_Object.Comp[i].TIMCount = triTime;
+                                      Task_Object.Comp[i].TRITime = triTime;
+                                      return FSC_SUCCESS;
+                              }
+                      }
+                      return FSC_FAIL;
+              }
+              
+              #endif
+ 247          /*-----------------------------------------------------------------------
+ 248          |                   END OF FLIE.  (C) COPYRIGHT zeweni                  |
+ 249          -----------------------------------------------------------------------*/
+ 250          
+ 251          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
